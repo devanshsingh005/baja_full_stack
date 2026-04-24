@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://bajaj-bfhl-api-8qvk.onrender.com/$1"
+    }
+  ]
+}

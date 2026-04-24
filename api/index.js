@@ -32,15 +32,38 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 app.use(helmet());
 
-const corsOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
-  : ['*'];
+const corsOrigins = (process.env.ALLOWED_ORIGINS || '*')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const isProduction = (process.env.NODE_ENV || 'development') === 'production';
+const allowAnyOrigin = corsOrigins.includes('*') && !isProduction;
+const strictAllowedOrigins = corsOrigins.filter((origin) => origin !== '*');
+
+if (isProduction && corsOrigins.includes('*')) {
+  // eslint-disable-next-line no-console
+  console.error('[CORS] ALLOWED_ORIGINS="*" is unsafe in production; wildcard disabled.');
+}
 
 const corsOptions = {
-  origin: corsOrigins.length === 1 && corsOrigins[0] === '*' ? '*' : corsOrigins,
+  origin: (origin, callback) => {
+    // Allow non-browser clients (curl/Postman/server-to-server).
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowAnyOrigin || strictAllowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('CORS origin not allowed'));
+  },
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
-  maxAge: 86400,
+  maxAge: 86400
 };
 app.use(cors(corsOptions));
 
@@ -125,6 +148,10 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err && err.message === 'CORS origin not allowed') {
+    return res.status(403).json({ error: 'CORS origin not allowed' });
+  }
+
   if (err && err.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'Invalid JSON body' });
   }
