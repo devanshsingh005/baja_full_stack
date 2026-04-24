@@ -534,10 +534,19 @@
     const EDGE_PATTERN = /^[A-Z]->[A-Z]$/;
 
     function normalizeEdgeText(raw) {
-      return String(raw)
-        .trim()
-        .replace(/^[\s"'“”‘’\[\]]+|[\s"'“”‘’\[\]]+$/g, '')
-        .trim();
+      let value = String(raw).trim();
+
+      // Handle escaped quote wrappers from copied JSON strings.
+      value = value.replace(/^\\+["']|\\+["']$/g, '');
+
+      // Repeatedly strip common wrappers to normalize tokens like ["A->B"].
+      while (/^[\s"'“”‘’`\[\]\(\)\{\}]+/.test(value) || /[\s"'“”‘’`\[\]\(\)\{\}]+$/.test(value)) {
+        value = value
+          .replace(/^[\s"'“”‘’`\[\]\(\)\{\}]+/, '')
+          .replace(/[\s"'“”‘’`\[\]\(\)\{\}]+$/, '');
+      }
+
+      return value.trim();
     }
 
     function explainInvalid(entry) {
@@ -602,8 +611,25 @@
     }
 
     function parseBulkInput(text) {
-      return text
-        .split(/[\n,]/)
+      const source = String(text || '').trim();
+      if (!source) return [];
+
+      // If the user pasted a JSON array, parse it directly.
+      if (source.startsWith('[') && source.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(source);
+          if (Array.isArray(parsed)) {
+            return parsed
+              .map((item) => normalizeEdgeText(item))
+              .filter(Boolean);
+          }
+        } catch (_err) {
+          // Fall through to delimiter parsing.
+        }
+      }
+
+      return source
+        .split(/[\n,;]/)
         .map((item) => normalizeEdgeText(item))
         .filter(Boolean);
     }
