@@ -502,9 +502,9 @@
   <div class="tooltip" id="tooltip"></div>
 
   <script>
-    const API_BASE = window.location.hostname === 'localhost'
+    const API_BASE = window.__API_BASE__ || (window.location.hostname === 'localhost'
       ? 'http://localhost:3000'
-      : 'https://bajaj-bfhl-api-8qvk.onrender.com';
+      : 'https://bajaj-bfhl-api-8qvk.onrender.com');
 
     const edgeInput = document.getElementById('edgeInput');
     const chipWrap = document.getElementById('chipWrap');
@@ -533,8 +533,15 @@
 
     const EDGE_PATTERN = /^[A-Z]->[A-Z]$/;
 
+    function normalizeEdgeText(raw) {
+      return String(raw)
+        .trim()
+        .replace(/^[\s"'“”‘’\[\]]+|[\s"'“”‘’\[\]]+$/g, '')
+        .trim();
+    }
+
     function explainInvalid(entry) {
-      const value = String(entry);
+      const value = normalizeEdgeText(entry);
       const trimmed = value.trim();
       if (trimmed === '') return 'Empty string';
       if (!trimmed.includes('->')) return 'Wrong separator or missing ->';
@@ -548,18 +555,18 @@
     }
 
     function classifyChip(value, index) {
-      const trimmed = value.trim();
+      const trimmed = normalizeEdgeText(value);
       if (!EDGE_PATTERN.test(trimmed)) return 'invalid';
       const [p, c] = trimmed.split('->');
       if (p === c) return 'invalid';
-      const firstIndex = chips.findIndex((chip) => chip.trim() === trimmed);
+      const firstIndex = chips.findIndex((chip) => normalizeEdgeText(chip) === trimmed);
       if (firstIndex !== -1 && firstIndex !== index) return 'duplicate';
       return 'valid';
     }
 
     function addChip(raw) {
-      const value = String(raw);
-      if (value.trim() === '') return;
+      const value = normalizeEdgeText(raw);
+      if (value === '') return;
       chips.push(value);
       renderChips();
     }
@@ -597,7 +604,7 @@
     function parseBulkInput(text) {
       return text
         .split(/[\n,]/)
-        .map((item) => item.trim())
+        .map((item) => normalizeEdgeText(item))
         .filter(Boolean);
     }
 
