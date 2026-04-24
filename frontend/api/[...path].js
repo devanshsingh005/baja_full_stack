@@ -6,17 +6,14 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const pathParam = req.query.path;
-  const pathSegments = Array.isArray(pathParam)
-    ? pathParam
-    : (typeof pathParam === 'string' ? [pathParam] : []);
+  const rawPath = String((req.url || '/').split('?')[0]);
+  const suffixPath = rawPath.replace(/^\/api\/?/, '');
+  const pathSegments = suffixPath
+    ? suffixPath.split('/').filter(Boolean).map((part) => decodeURIComponent(part))
+    : [];
 
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(req.query || {})) {
-    if (key === 'path') {
-      continue;
-    }
-
     if (Array.isArray(value)) {
       value.forEach((item) => query.append(key, String(item)));
     } else if (value !== undefined) {
