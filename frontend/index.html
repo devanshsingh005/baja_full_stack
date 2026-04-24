@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BFHL Node Explorer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #090c13;
+      --surface: #0f1422;
+      --surface-soft: #11182b;
+      --panel-border: #25304b;
+      --text: #e9edf7;
+      --text-dim: #95a0bc;
+      --accent-blue: #4c8cff;
+      --accent-green: #2dcf86;
+      --accent-orange: #ff8d4d;
+      --accent-red: #ff5f72;
+      --accent-yellow: #f3c969;
+      --radius: 16px;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 10% 0%, #1c2a4f 0%, transparent 34%),
+                  radial-gradient(circle at 100% 100%, #12203f 0%, transparent 35%),
+                  linear-gradient(135deg, #07090f, #090d16 45%, #06080e);
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .app {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border: 1px solid var(--panel-border);
+      background: linear-gradient(180deg, rgba(19, 28, 51, 0.95), rgba(10, 14, 24, 0.95));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: conic-gradient(from 210deg, #77b7ff, #6f82ff, #56d1b2, #77b7ff);
+      box-shadow: 0 0 30px rgba(111, 130, 255, 0.45);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      letter-spacing: 0.3px;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(18, 24, 42, 0.95), rgba(12, 17, 30, 0.95));
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-title {
+      margin: 0 0 14px;
+      font-size: 0.95rem;
+      color: #c8d2ed;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .chip-input-wrap {
+      border: 1px solid #2a3455;
+      background: #0a0f1b;
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-height: 52px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      line-height: 1;
+      border: 1px solid;
+      background: #11182d;
+      color: #eaf0ff;
+      position: relative;
+    }
+
+    .chip-valid { border-color: #2dcf86; }
+    .chip-invalid { border-color: #ff5f72; }
+    .chip-duplicate { border-color: #f3c969; }
+
+    .chip button {
+      border: 0;
+      background: transparent;
+      color: #aeb8d7;
+      cursor: pointer;
+      font-size: 0.92rem;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .chip button:hover { color: #fff; }
+
+    .edge-input {
+      flex: 1;
+      min-width: 150px;
+      border: 0;
+      background: transparent;
+      color: #eff4ff;
+      font-size: 0.95rem;
+      padding: 4px;
+      outline: none;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .actions {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button.primary,
+    button.secondary,
+    button.ghost {
+      border: 1px solid #2a3555;
+      color: #e8efff;
+      background: #121a2f;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.86rem;
+      font-weight: 600;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    button.primary {
+      background: linear-gradient(180deg, #3d7dff, #2f62d4);
+      border-color: #5f95ff;
+    }
+
+    button.primary[disabled] {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    button:hover:not([disabled]) {
+      transform: translateY(-1px);
+      border-color: #5a74af;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      display: inline-block;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      border: 1px solid #2a3555;
+      border-radius: 12px;
+      padding: 14px;
+      background: #0d1426;
+    }
+
+    .stat .k {
+      font-size: 0.74rem;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat .v {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .stat-green .v { color: var(--accent-green); }
+    .stat-orange .v { color: var(--accent-orange); }
+    .stat-blue .v { color: #73a7ff; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      border: 1px solid #314164;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.82rem;
+      background: #0f172c;
+      color: #d3ddf6;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      border-color: #65a0ff;
+      background: #153061;
+      color: #f0f5ff;
+    }
+
+    .tree-card {
+      border: 1px solid #273454;
+      background: #0a1020;
+      border-radius: 12px;
+      padding: 12px;
+      position: relative;
+      min-height: 280px;
+      overflow: hidden;
+    }
+
+    .depth-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.74rem;
+      border: 1px solid #4f6ca6;
+      background: #152544;
+      color: #d4e3ff;
+      border-radius: 999px;
+      padding: 4px 9px;
+    }
+
+    .cycle-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.75rem;
+      border: 1px solid #9f4a55;
+      color: #ffd7dc;
+      background: #421722;
+      border-radius: 999px;
+      padding: 4px 9px;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .pill {
+      white-space: nowrap;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      padding: 7px 11px;
+      border: 1px solid;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-invalid {
+      border-color: #9f4a55;
+      background: #33151d;
+      color: #ffd4da;
+    }
+
+    .pill-duplicate {
+      border-color: #8f7440;
+      background: #302617;
+      color: #ffe8ba;
+    }
+
+    .json-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .json-box {
+      display: none;
+      border: 1px solid #273454;
+      border-radius: 10px;
+      background: #0a1020;
+      padding: 12px;
+      max-height: 280px;
+      overflow: auto;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.65;
+    }
+
+    .json-visible { display: block; }
+
+    .json-key { color: #8cc3ff; }
+    .json-string { color: #95f0be; }
+    .json-number { color: #ffce88; }
+    .json-boolean { color: #f3a8ff; }
+    .json-null { color: #9ea8bf; }
+
+    .error-state {
+      border: 1px solid #8d3f4f;
+      border-radius: 12px;
+      background: #2a1017;
+      color: #ffd0d8;
+      padding: 18px;
+    }
+
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #0e1528;
+      border: 1px solid #2f4166;
+      color: #dce7ff;
+      font-size: 0.78rem;
+      padding: 6px 8px;
+      border-radius: 8px;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 120ms ease, transform 120ms ease;
+      z-index: 99;
+    }
+
+    .tooltip.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 5, 10, 0.74);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 60;
+    }
+
+    .modal.open { display: flex; }
+
+    .modal-card {
+      width: min(620px, 100%);
+      background: #0f1526;
+      border: 1px solid #2a3555;
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .modal textarea {
+      width: 100%;
+      min-height: 180px;
+      border-radius: 10px;
+      border: 1px solid #334066;
+      background: #090e1a;
+      color: #eaf0ff;
+      padding: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      resize: vertical;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animated-enter {
+      animation: fadeInUp 260ms ease both;
+    }
+
+    @media (max-width: 860px) {
+      body { padding: 14px; }
+      .stats { grid-template-columns: 1fr; }
+      .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .tree-card { min-height: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>BFHL Node Explorer</h1>
+          <div class="subtitle">Parse edges. Explore forests. Spot cycles instantly.</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel">
+      <h2 class="panel-title">Input Edges</h2>
+      <div class="chip-input-wrap" id="chipWrap">
+        <input id="edgeInput" class="edge-input" placeholder="Type edge (e.g. A->B), press Enter or comma" />
+      </div>
+      <div class="actions">
+        <button class="secondary" id="pasteBulkBtn">Paste Bulk</button>
+        <button class="ghost" id="clearBtn">Clear All</button>
+        <button class="primary" id="submitBtn" disabled>Submit →</button>
+      </div>
+    </section>
+
+    <section class="panel" id="resultsPanel">
+      <h2 class="panel-title">Results</h2>
+      <div class="stats">
+        <div class="stat stat-green">
+          <div class="k">Total Trees</div>
+          <div class="v" id="treesCount">0</div>
+        </div>
+        <div class="stat stat-orange">
+          <div class="k">Total Cycles</div>
+          <div class="v" id="cyclesCount">0</div>
+        </div>
+        <div class="stat stat-blue">
+          <div class="k">Largest Tree Root</div>
+          <div class="v" id="largestRoot">-</div>
+        </div>
+      </div>
+
+      <div class="tabs" id="tabs"></div>
+      <div class="tree-card" id="treeView">Submit edges to render hierarchy visuals.</div>
+
+      <h3 class="panel-title" style="margin-top: 16px;">Invalid Entries</h3>
+      <div class="pill-row" id="invalidRow"></div>
+
+      <h3 class="panel-title" style="margin-top: 16px;">Duplicate Edges</h3>
+      <div class="pill-row" id="duplicateRow"></div>
+
+      <div style="margin-top: 16px;">
+        <div class="json-toggle">
+          <button class="secondary" id="jsonToggle">View Raw Response</button>
+          <button class="ghost" id="copyJsonBtn">Copy JSON</button>
+        </div>
+        <pre class="json-box" id="jsonBox"></pre>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="bulkModal" aria-hidden="true">
+    <div class="modal-card">
+      <h3 class="panel-title">Paste comma/newline separated edges</h3>
+      <textarea id="bulkTextarea" placeholder="A->B, A->C&#10;B->D"></textarea>
+      <div class="actions" style="margin-top: 12px;">
+        <button class="secondary" id="bulkAddBtn">Add Entries</button>
+        <button class="ghost" id="bulkCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const API_BASE = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : 'https://your-deployed-api-url.com'; // update before deploy
+
+    const edgeInput = document.getElementById('edgeInput');
+    const chipWrap = document.getElementById('chipWrap');
+    const submitBtn = document.getElementById('submitBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const pasteBulkBtn = document.getElementById('pasteBulkBtn');
+    const treesCount = document.getElementById('treesCount');
+    const cyclesCount = document.getElementById('cyclesCount');
+    const largestRoot = document.getElementById('largestRoot');
+    const tabs = document.getElementById('tabs');
+    const treeView = document.getElementById('treeView');
+    const invalidRow = document.getElementById('invalidRow');
+    const duplicateRow = document.getElementById('duplicateRow');
+    const jsonToggle = document.getElementById('jsonToggle');
+    const jsonBox = document.getElementById('jsonBox');
+    const copyJsonBtn = document.getElementById('copyJsonBtn');
+    const bulkModal = document.getElementById('bulkModal');
+    const bulkTextarea = document.getElementById('bulkTextarea');
+    const bulkAddBtn = document.getElementById('bulkAddBtn');
+    const bulkCancelBtn = document.getElementById('bulkCancelBtn');
+    const tooltip = document.getElementById('tooltip');
+
+    let chips = [];
+    let responseData = null;
+    let selectedHierarchyIndex = 0;
+
+    const EDGE_PATTERN = /^[A-Z]->[A-Z]$/;
+
+    function explainInvalid(entry) {
+      const value = String(entry);
+      const trimmed = value.trim();
+      if (trimmed === '') return 'Empty string';
+      if (!trimmed.includes('->')) return 'Wrong separator or missing ->';
+      const parts = trimmed.split('->');
+      if (parts.length !== 2) return 'Wrong separator format';
+      if (parts[0].length !== 1 || parts[1].length !== 1) return 'Multi-character or missing node';
+      if (!/^[A-Z]$/.test(parts[0]) || !/^[A-Z]$/.test(parts[1])) return 'Nodes must be uppercase letters A-Z';
+      if (parts[0] === parts[1]) return 'Self-loop is not allowed';
+      if (!EDGE_PATTERN.test(trimmed)) return 'Must match exact pattern A->B';
+      return 'Invalid edge';
+    }
+
+    function classifyChip(value, index) {
+      const trimmed = value.trim();
+      if (!EDGE_PATTERN.test(trimmed)) return 'invalid';
+      const [p, c] = trimmed.split('->');
+      if (p === c) return 'invalid';
+      const firstIndex = chips.findIndex((chip) => chip.trim() === trimmed);
+      if (firstIndex !== -1 && firstIndex !== index) return 'duplicate';
+      return 'valid';
+    }
+
+    function addChip(raw) {
+      const value = String(raw);
+      if (value.trim() === '') return;
+      chips.push(value);
+      renderChips();
+    }
+
+    function removeChip(index) {
+      chips.splice(index, 1);
+      renderChips();
+    }
+
+    function renderChips() {
+      chipWrap.querySelectorAll('.chip').forEach((node) => node.remove());
+
+      chips.forEach((chipValue, index) => {
+        const status = classifyChip(chipValue, index);
+        const chip = document.createElement('div');
+        chip.className = `chip chip-${status}`;
+        chip.title = status === 'invalid' ? explainInvalid(chipValue) : (status === 'duplicate' ? 'Potential duplicate edge' : 'Looks valid');
+
+        const text = document.createElement('span');
+        text.textContent = chipValue;
+        chip.appendChild(text);
+
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.textContent = '×';
+        close.addEventListener('click', () => removeChip(index));
+        chip.appendChild(close);
+
+        chipWrap.insertBefore(chip, edgeInput);
+      });
+
+      submitBtn.disabled = chips.length === 0;
+    }
+
+    function parseBulkInput(text) {
+      return text
+        .split(/[\n,]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    function animateCount(el, target) {
+      const start = 0;
+      const duration = 600;
+      const started = performance.now();
+
+      function frame(now) {
+        const progress = Math.min(1, (now - started) / duration);
+        const current = Math.round(start + (target - start) * progress);
+        el.textContent = current;
+        if (progress < 1) requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    function createTabs(hierarchies) {
+      tabs.innerHTML = '';
+      hierarchies.forEach((h, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `tab ${idx === selectedHierarchyIndex ? 'active' : ''}`;
+        btn.textContent = h.has_cycle ? `Cycle ${h.root}` : `Tree ${h.root}`;
+        btn.addEventListener('click', () => {
+          selectedHierarchyIndex = idx;
+          createTabs(hierarchies);
+          renderHierarchyView();
+        });
+        tabs.appendChild(btn);
+      });
+    }
+
+    function buildTreeLayout(nodeLabel, treeObject, level, state) {
+      const children = Object.entries(treeObject || {});
+      if (children.length === 0) {
+        const leafX = state.nextX;
+        state.nextX += 1;
+        return { label: nodeLabel, x: leafX, y: level, children: [] };
+      }
+
+      const childNodes = children.map(([childLabel, childObj]) => buildTreeLayout(childLabel, childObj, level + 1, state));
+      const minX = childNodes[0].x;
+      const maxX = childNodes[childNodes.length - 1].x;
+
+      return {
+        label: nodeLabel,
+        x: (minX + maxX) / 2,
+        y: level,
+        children: childNodes,
+      };
+    }
+
+    function flattenNodes(root, result = []) {
+      result.push(root);
+      root.children.forEach((child) => flattenNodes(child, result));
+      return result;
+    }
+
+    function getCycleNodesForRoot(root) {
+      const validEdges = [];
+      const parentOf = new Map();
+
+      chips.forEach((raw) => {
+        const trimmed = raw.trim();
+        if (!EDGE_PATTERN.test(trimmed)) return;
+        const [p, c] = trimmed.split('->');
+        if (p === c) return;
+        validEdges.push({ p, c });
+      });
+
+      const dedup = [];
+      const seen = new Set();
+      validEdges.forEach((e) => {
+        const key = `${e.p}->${e.c}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          dedup.push(e);
+        }
+      });
+
+      const kept = [];
+      dedup.forEach((e) => {
+        if (parentOf.has(e.c)) return;
+        parentOf.set(e.c, e.p);
+        kept.push(e);
+      });
+
+      const undirected = new Map();
+      const ensure = (n) => {
+        if (!undirected.has(n)) undirected.set(n, new Set());
+      };
+      kept.forEach((e) => {
+        ensure(e.p);
+        ensure(e.c);
+        undirected.get(e.p).add(e.c);
+        undirected.get(e.c).add(e.p);
+      });
+
+      const queue = [root];
+      const visited = new Set([root]);
+      const nodes = [];
+      while (queue.length) {
+        const n = queue.shift();
+        nodes.push(n);
+        for (const next of undirected.get(n) || []) {
+          if (visited.has(next)) continue;
+          visited.add(next);
+          queue.push(next);
+        }
+      }
+
+      return nodes.length ? nodes.sort() : [root];
+    }
+
+    function renderTreeSvg(hierarchy) {
+      const rootEntry = Object.entries(hierarchy.tree || {})[0];
+      if (!rootEntry) {
+        treeView.textContent = 'No tree data available.';
+        return;
+      }
+
+      const [rootLabel, rootObj] = rootEntry;
+      const layout = buildTreeLayout(rootLabel, rootObj, 0, { nextX: 0 });
+      const nodes = flattenNodes(layout);
+
+      const width = Math.max(560, (Math.max(...nodes.map((n) => n.x)) + 1) * 130);
+      const height = Math.max(220, (Math.max(...nodes.map((n) => n.y)) + 1) * 96 + 60);
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+
+      const centerX = (n) => 70 + n.x * 120;
+      const centerY = (n) => 42 + n.y * 92;
+
+      nodes.forEach((node) => {
+        node.children.forEach((child) => {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', centerX(node));
+          line.setAttribute('y1', centerY(node));
+          line.setAttribute('x2', centerX(child));
+          line.setAttribute('y2', centerY(child));
+          line.setAttribute('stroke', '#5f74a5');
+          line.setAttribute('stroke-width', '1.4');
+          line.setAttribute('opacity', '0.8');
+          svg.appendChild(line);
+        });
+      });
+
+      nodes.forEach((node, idx) => {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.style.animation = `fadeInUp 260ms ease ${idx * 90}ms both`;
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', centerX(node));
+        circle.setAttribute('cy', centerY(node));
+        circle.setAttribute('r', '18');
+        circle.setAttribute('fill', node.children.length ? '#2a4f9b' : '#385fa8');
+        circle.setAttribute('stroke', node.label === hierarchy.root ? '#9bc1ff' : '#6f8fc8');
+        circle.setAttribute('stroke-width', node.label === hierarchy.root ? '2.7' : '1.5');
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', centerX(node));
+        text.setAttribute('y', centerY(node) + 4);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('font-size', '12');
+        text.setAttribute('fill', '#eaf2ff');
+        text.setAttribute('font-weight', '600');
+        text.textContent = node.label;
+
+        group.appendChild(circle);
+        group.appendChild(text);
+
+        group.addEventListener('mouseenter', (ev) => {
+          tooltip.textContent = `Node ${node.label} - depth level ${node.y + 1}`;
+          tooltip.style.left = `${ev.clientX + 12}px`;
+          tooltip.style.top = `${ev.clientY + 10}px`;
+          tooltip.classList.add('show');
+          circle.setAttribute('stroke', '#cbe0ff');
+          circle.setAttribute('stroke-width', '2.7');
+        });
+
+        group.addEventListener('mousemove', (ev) => {
+          tooltip.style.left = `${ev.clientX + 12}px`;
+          tooltip.style.top = `${ev.clientY + 10}px`;
+        });
+
+        group.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('show');
+          circle.setAttribute('stroke', node.label === hierarchy.root ? '#9bc1ff' : '#6f8fc8');
+          circle.setAttribute('stroke-width', node.label === hierarchy.root ? '2.7' : '1.5');
+        });
+
+        svg.appendChild(group);
+      });
+
+      treeView.innerHTML = `<div class="depth-badge">Depth ${hierarchy.depth}</div>`;
+      treeView.appendChild(svg);
+    }
+
+    function renderCycleSvg(hierarchy) {
+      const nodes = getCycleNodesForRoot(hierarchy.root);
+      const size = 300;
+      const center = size / 2;
+      const radius = 90;
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+
+      const positions = nodes.map((node, idx) => {
+        const angle = (Math.PI * 2 * idx) / nodes.length - Math.PI / 2;
+        return {
+          node,
+          x: center + Math.cos(angle) * radius,
+          y: center + Math.sin(angle) * radius,
+        };
+      });
+
+      positions.forEach((pos, idx) => {
+        const next = positions[(idx + 1) % positions.length];
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', pos.x);
+        line.setAttribute('y1', pos.y);
+        line.setAttribute('x2', next.x);
+        line.setAttribute('y2', next.y);
+        line.setAttribute('stroke', '#c96576');
+        line.setAttribute('stroke-width', '1.7');
+        svg.appendChild(line);
+      });
+
+      positions.forEach((pos, idx) => {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.style.animation = `fadeInUp 260ms ease ${idx * 90}ms both`;
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', pos.x);
+        circle.setAttribute('cy', pos.y);
+        circle.setAttribute('r', '16');
+        circle.setAttribute('fill', '#612634');
+        circle.setAttribute('stroke', '#e18b99');
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', pos.x);
+        text.setAttribute('y', pos.y + 4);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('font-size', '12');
+        text.setAttribute('fill', '#ffe6ea');
+        text.textContent = pos.node;
+
+        group.appendChild(circle);
+        group.appendChild(text);
+        svg.appendChild(group);
+      });
+
+      treeView.innerHTML = '<div class="cycle-badge">CYCLE DETECTED</div>';
+      treeView.appendChild(svg);
+    }
+
+    function renderHierarchyView() {
+      if (!responseData || !Array.isArray(responseData.hierarchies) || responseData.hierarchies.length === 0) {
+        treeView.textContent = 'No hierarchies found.';
+        return;
+      }
+
+      const hierarchy = responseData.hierarchies[selectedHierarchyIndex];
+      if (!hierarchy) {
+        treeView.textContent = 'Select a hierarchy.';
+        return;
+      }
+
+      if (hierarchy.has_cycle) {
+        renderCycleSvg(hierarchy);
+      } else {
+        renderTreeSvg(hierarchy);
+      }
+    }
+
+    function renderPills(container, entries, type) {
+      container.innerHTML = '';
+      if (!entries.length) {
+        const muted = document.createElement('div');
+        muted.className = 'subtitle';
+        muted.textContent = 'None';
+        container.appendChild(muted);
+        return;
+      }
+
+      entries.forEach((entry) => {
+        const pill = document.createElement('div');
+        pill.className = `pill ${type === 'invalid' ? 'pill-invalid' : 'pill-duplicate'}`;
+        if (type === 'invalid') {
+          pill.innerHTML = `<span>✕</span><span>${entry}</span>`;
+          pill.title = explainInvalid(entry);
+        } else {
+          pill.innerHTML = `<span>⧉</span><span>${entry}</span>`;
+          pill.title = 'Duplicate edge ignored after first occurrence';
+        }
+        container.appendChild(pill);
+      });
+    }
+
+    function syntaxHighlightJSON(obj) {
+      const json = JSON.stringify(obj, null, 2)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"\s*:|"(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+        if (/^".*":$/.test(match)) return `<span class="json-key">${match}</span>`;
+        if (/^"/.test(match)) return `<span class="json-string">${match}</span>`;
+        if (/true|false/.test(match)) return `<span class="json-boolean">${match}</span>`;
+        if (/null/.test(match)) return `<span class="json-null">${match}</span>`;
+        return `<span class="json-number">${match}</span>`;
+      });
+    }
+
+    function renderResponse(data) {
+      responseData = data;
+      selectedHierarchyIndex = 0;
+
+      const summary = data.summary || { total_trees: 0, total_cycles: 0, largest_tree_root: null };
+      animateCount(treesCount, Number(summary.total_trees || 0));
+      animateCount(cyclesCount, Number(summary.total_cycles || 0));
+      largestRoot.textContent = summary.largest_tree_root || '-';
+
+      createTabs(data.hierarchies || []);
+      renderHierarchyView();
+
+      renderPills(invalidRow, data.invalid_entries || [], 'invalid');
+      renderPills(duplicateRow, data.duplicate_edges || [], 'duplicate');
+      jsonBox.innerHTML = syntaxHighlightJSON(data);
+    }
+
+    function renderErrorState(message, retryable = true) {
+      tabs.innerHTML = '';
+      treeView.innerHTML = `
+        <div class="error-state">
+          <strong>Something went wrong</strong>
+          <div style="margin-top: 8px;">${message}</div>
+          ${retryable ? '<div style="margin-top: 12px;"><button class="secondary" id="retryBtn">Retry</button></div>' : ''}
+        </div>
+      `;
+
+      const retryBtn = document.getElementById('retryBtn');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => submitEdges());
+      }
+    }
+
+    async function submitEdges() {
+      if (!chips.length) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span>Submitting...';
+
+      try {
+        const payload = { data: chips.slice() };
+        const response = await fetch(`${API_BASE}/bfhl`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          const errorMessage = data && data.error ? data.error : `Request failed with status ${response.status}`;
+          renderErrorState(errorMessage, true);
+          return;
+        }
+
+        if (!data || !Array.isArray(data.hierarchies) || !data.summary) {
+          renderErrorState('Malformed API response. Missing expected hierarchy/summary fields.', false);
+          return;
+        }
+
+        renderResponse(data);
+      } catch (error) {
+        renderErrorState('Could not reach API. Check API_BASE and network connectivity.', true);
+      } finally {
+        submitBtn.disabled = chips.length === 0;
+        submitBtn.textContent = 'Submit →';
+      }
+    }
+
+    edgeInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ',') {
+        event.preventDefault();
+        if (edgeInput.value.trim()) addChip(edgeInput.value);
+        edgeInput.value = '';
+      }
+    });
+
+    edgeInput.addEventListener('blur', () => {
+      if (!edgeInput.value.trim()) return;
+      addChip(edgeInput.value);
+      edgeInput.value = '';
+    });
+
+    clearBtn.addEventListener('click', () => {
+      chips = [];
+      responseData = null;
+      selectedHierarchyIndex = 0;
+      renderChips();
+      treesCount.textContent = '0';
+      cyclesCount.textContent = '0';
+      largestRoot.textContent = '-';
+      tabs.innerHTML = '';
+      treeView.textContent = 'Submit edges to render hierarchy visuals.';
+      invalidRow.innerHTML = '';
+      duplicateRow.innerHTML = '';
+      jsonBox.textContent = '';
+    });
+
+    submitBtn.addEventListener('click', submitEdges);
+
+    pasteBulkBtn.addEventListener('click', () => {
+      bulkModal.classList.add('open');
+      bulkModal.setAttribute('aria-hidden', 'false');
+      bulkTextarea.focus();
+    });
+
+    bulkCancelBtn.addEventListener('click', () => {
+      bulkModal.classList.remove('open');
+      bulkModal.setAttribute('aria-hidden', 'true');
+      bulkTextarea.value = '';
+    });
+
+    bulkAddBtn.addEventListener('click', () => {
+      parseBulkInput(bulkTextarea.value).forEach(addChip);
+      bulkModal.classList.remove('open');
+      bulkModal.setAttribute('aria-hidden', 'true');
+      bulkTextarea.value = '';
+    });
+
+    jsonToggle.addEventListener('click', () => {
+      jsonBox.classList.toggle('json-visible');
+      jsonToggle.textContent = jsonBox.classList.contains('json-visible')
+        ? 'Hide Raw Response'
+        : 'View Raw Response';
+    });
+
+    copyJsonBtn.addEventListener('click', async () => {
+      if (!responseData) return;
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(responseData, null, 2));
+        copyJsonBtn.textContent = 'Copied ✓';
+        setTimeout(() => {
+          copyJsonBtn.textContent = 'Copy JSON';
+        }, 900);
+      } catch (error) {
+        copyJsonBtn.textContent = 'Copy failed';
+        setTimeout(() => {
+          copyJsonBtn.textContent = 'Copy JSON';
+        }, 900);
+      }
+    });
+
+    renderChips();
+  </script>
+</body>
+</html>
