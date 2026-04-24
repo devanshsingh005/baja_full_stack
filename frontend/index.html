@@ -860,7 +860,7 @@
   <script>
     const API_BASE = window.location.hostname === 'localhost'
       ? 'http://localhost:3000'
-      : 'https://your-deployed-api-url.com';
+      : '/api';
 
     async function analyze(entries) {
       const res = await fetch(`${API_BASE}/bfhl`, {
